@@ -14,7 +14,7 @@ app.UseHttpsRedirection();
 
 app.MapGet("api/notion", async (HttpContext context, NotionClient client) => 
 {
-  await client.QueryDatabase();
+  await client.FetchDbPages();
 });
 
 app.Run();
