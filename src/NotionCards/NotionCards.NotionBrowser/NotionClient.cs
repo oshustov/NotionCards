@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using NotionCards.NotionBrowser.Entities;
 using System.Web;
 
 namespace NotionCards.NotionBrowser

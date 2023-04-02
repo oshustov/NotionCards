@@ -16,14 +16,14 @@ app.MapGet("api/notion", async (HttpContext context, NotionClient client) =>
 {
   var pages = await client.FetchDbPages(5);
 
-  foreach (var x in pages.Results)
+  foreach (var x in pages.results)
   {
-    var pageChildren = await client.FetchBlocks(x.Id);
-    var tableBlock = pageChildren.Results.FirstOrDefault(x => x.Type == "table");
+    var pageChildren = await client.FetchBlocks(x.id);
+    var tableBlock = pageChildren.results.FirstOrDefault(x => x.type == "table");
     if (tableBlock is null)
       continue;
 
-    var tableContent = await client.FetchBlocks(tableBlock.Id);
+    var tableContent = await client.FetchBlocks(tableBlock.id);
   }
 });
 
