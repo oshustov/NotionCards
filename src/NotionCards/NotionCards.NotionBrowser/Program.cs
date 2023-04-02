@@ -12,9 +12,19 @@ var app = builder.Build();
 
 app.UseHttpsRedirection();
 
-app.MapGet("api/notion", async (HttpContext context, NotionClient client) => 
+app.MapGet("api/notion", async (HttpContext context, NotionClient client) =>
 {
-  await client.FetchDbPages();
+  var pages = await client.FetchDbPages(5);
+
+  foreach (var x in pages.Results)
+  {
+    var pageChildren = await client.FetchBlocks(x.Id);
+    var tableBlock = pageChildren.Results.FirstOrDefault(x => x.Type == "table");
+    if (tableBlock is null)
+      continue;
+
+    var tableContent = await client.FetchBlocks(tableBlock.Id);
+  }
 });
 
 app.Run();

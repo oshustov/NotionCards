@@ -2,6 +2,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using NotionCards.NotionBrowser.Entities;
+using System.Web;
 
 namespace NotionCards.NotionBrowser
 {
@@ -14,39 +15,38 @@ namespace NotionCards.NotionBrowser
     {
       _httpClient = httpClient;
       _options = options.Value;
-      _httpClient.BaseAddress = new Uri(_options.ApiUrl);
+      _httpClient.BaseAddress = new Uri(_options.ApiUrl, UriKind.Absolute);
       _httpClient.DefaultRequestHeaders.Clear();
       _httpClient.DefaultRequestHeaders.Add("accept", "application/json");
       _httpClient.DefaultRequestHeaders.Add("Notion-Version", "2022-06-28");
       _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", $"{_options.NotionSecretId}");
     }
 
-    public async Task FetchPageBlocks(string pageId)
+    public async Task<NotionResponse> FetchBlocks(string parentId)
     {
-      var requestUri = $"/v1/blocks/{pageId}/children";
-      var message = new HttpRequestMessage(HttpMethod.Post, requestUri);
+      var query = HttpUtility.ParseQueryString(string.Empty);
+      query["page_size"] = "50";
+      var queryString = query.ToString();
 
-      var requestBody = JsonSerializer.Serialize(new
-      {
-        page_size = 1
-      });
-
-      message.Content = new StringContent(requestBody, new MediaTypeHeaderValue("application/json"));
+      var message = new HttpRequestMessage(HttpMethod.Get, $"blocks/{parentId}/children?{queryString}");
 
       using var response = await _httpClient.SendAsync(message);
       var body = await response.Content.ReadAsStringAsync();
+
+      var deserialized = JsonSerializer.Deserialize<NotionResponse>(body);
+      return deserialized;
     }
 
-    public async Task<NotionDbPagesResponse> FetchDbPages()
+    public async Task<NotionResponse> FetchDbPages(int size)
     {
       var databaseId = _options.DatabaseId;
 
-      var requestUri = $"/v1/databases/{databaseId}/query";
+      var requestUri = $"databases/{databaseId}/query";
       var message = new HttpRequestMessage(HttpMethod.Post, requestUri);
-      
+
       var requestBody = JsonSerializer.Serialize(new
       {
-        page_size = 1
+        page_size = size
       });
 
       message.Content = new StringContent(requestBody, new MediaTypeHeaderValue("application/json"));
@@ -54,7 +54,7 @@ namespace NotionCards.NotionBrowser
       using var response = await _httpClient.SendAsync(message);
       var body = await response.Content.ReadAsStringAsync();
 
-      var deserialized = JsonSerializer.Deserialize<NotionDbPagesResponse>(body);
+      var deserialized = JsonSerializer.Deserialize<NotionResponse>(body);
       return deserialized;
     }
   }
