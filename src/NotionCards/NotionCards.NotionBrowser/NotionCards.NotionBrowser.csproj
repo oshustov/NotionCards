@@ -10,10 +10,12 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.2" />
+    <PackageReference Include="Notion.Net" Version="4.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Entities\" />
+    <ProjectReference Include="..\NotionCards.Core\NotionCards.Core.csproj" />
+    <ProjectReference Include="..\NotionCards.Storage\NotionCards.Storage.csproj" />
   </ItemGroup>
 
 </Project>

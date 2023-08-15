@@ -1,60 +1,90 @@
-﻿using Microsoft.Extensions.Options;
-using System.Net.Http.Headers;
-using System.Text.Json;
-using System.Web;
+﻿using Marten;
+using Microsoft.Extensions.Options;
+using Notion.Client;
+using NotionCards.Core.Entities;
+using System.Collections.Concurrent;
+using System.Linq.Expressions;
 
 namespace NotionCards.NotionBrowser
 {
   public class NotionClient
   {
-    private readonly HttpClient _httpClient;
     private readonly NotionOptions _options;
 
-    public NotionClient(HttpClient httpClient, IOptions<NotionOptions> options)
+    public NotionClient(IOptions<NotionOptions> options)
     {
-      _httpClient = httpClient;
       _options = options.Value;
-      _httpClient.BaseAddress = new Uri(_options.ApiUrl, UriKind.Absolute);
-      _httpClient.DefaultRequestHeaders.Clear();
-      _httpClient.DefaultRequestHeaders.Add("accept", "application/json");
-      _httpClient.DefaultRequestHeaders.Add("Notion-Version", "2022-06-28");
-      _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", $"{_options.NotionSecretId}");
     }
 
-    public async Task<NotionResponse> FetchBlocks(string parentId)
+    public async Task ReadEntireDb()
     {
-      var query = HttpUtility.ParseQueryString(string.Empty);
-      query["page_size"] = "50";
-      var queryString = query.ToString();
-
-      var message = new HttpRequestMessage(HttpMethod.Get, $"blocks/{parentId}/children?{queryString}");
-
-      using var response = await _httpClient.SendAsync(message);
-      var body = await response.Content.ReadAsStringAsync();
-
-      var deserialized = JsonSerializer.Deserialize<NotionResponse>(body);
-      return deserialized;
-    }
-
-    public async Task<NotionResponse> FetchDbPages(int size)
-    {
-      var databaseId = _options.DatabaseId;
-
-      var requestUri = $"databases/{databaseId}/query";
-      var message = new HttpRequestMessage(HttpMethod.Post, requestUri);
-
-      var requestBody = JsonSerializer.Serialize(new
+      var client = NotionClientFactory.Create(new ClientOptions()
       {
-        page_size = size
+        AuthToken = _options.NotionSecretId
       });
 
-      message.Content = new StringContent(requestBody, new MediaTypeHeaderValue("application/json"));
+      var parameters = new DatabasesQueryParameters()
+      {
+        PageSize = 100,
+        StartCursor = null
+      };
 
-      using var response = await _httpClient.SendAsync(message);
-      var body = await response.Content.ReadAsStringAsync();
+      var expressions = new ConcurrentBag<LangExpression>();
 
-      var deserialized = JsonSerializer.Deserialize<NotionResponse>(body);
-      return deserialized;
+      do
+      {
+        var pages = await client.Databases.QueryAsync(_options.DatabaseId, parameters);
+        var tasks = pages.Results
+          .Select(x => ReadPageRows(client, x)
+            .ContinueWith(x => x.Result.ForEach(y => expressions.Add(y))));
+
+        await Task.WhenAll(tasks);
+
+        parameters.StartCursor = pages.HasMore
+          ? pages.NextCursor
+          : null;
+      }
+      while (parameters.StartCursor != null);
+
+      var count = expressions.Count;
+    }
+
+    private static async Task<List<LangExpression>> ReadPageRows(Notion.Client.NotionClient client, Page page)
+    {
+      var expressions = new List<LangExpression>();
+
+      var dbPageBlocks = await client.Blocks.RetrieveChildrenAsync(page.Id);
+      var table = dbPageBlocks.Results.FirstOrDefault(x => x.Type == BlockType.Table);
+      if (table == null)
+        return expressions;
+
+      var tableRows = await client.Blocks.RetrieveChildrenAsync(table.Id);
+      if (tableRows == null)
+        return expressions;
+
+      var tableRowBlocks = tableRows.Results.Cast<TableRowBlock>().ToList();
+
+      // i = 1 because the first row is always a heading row
+      for (var i = 1; i < tableRowBlocks.Count; i++)
+      {
+        var cells = tableRowBlocks[i].TableRow.Cells.ToList();
+        if (cells is not { Count: > 1 })
+          continue;
+
+        var invariant = cells[0].FirstOrDefault()?.PlainText;
+        var translation = cells[1].FirstOrDefault()?.PlainText;
+
+        if (invariant == null && translation == null)
+          continue;
+
+        expressions.Add(new LangExpression
+        {
+          Invariant = invariant,
+          Translation = translation
+        });
+      }
+
+      return expressions;
     }
   }
 }
