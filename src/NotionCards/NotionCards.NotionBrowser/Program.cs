@@ -1,4 +1,3 @@
-using Marten;
 using Microsoft.AspNetCore.Mvc;
 using NotionCards.NotionBrowser;
 

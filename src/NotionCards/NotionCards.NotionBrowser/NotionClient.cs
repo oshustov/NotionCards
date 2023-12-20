@@ -1,5 +1,4 @@
-﻿using Marten;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using Notion.Client;
 using NotionCards.Core.Entities;
 using System.Collections.Concurrent;
@@ -7,6 +6,8 @@ using System.Linq.Expressions;
 
 namespace NotionCards.NotionBrowser
 {
+  public record NotionDbEntry(string Expression, string Translation, DateTime AddedToNotion, string PageId, DateTime AddedAt, DateTime UpdatedAt);
+
   public class NotionClient
   {
     private readonly NotionOptions _options;
@@ -29,62 +30,49 @@ namespace NotionCards.NotionBrowser
         StartCursor = null
       };
 
-      var expressions = new ConcurrentBag<LangExpression>();
+      var translationKey = "Meaning/translation";
+      var expressionKey = "Expression";
+      var addedKey = "Date";
 
       do
       {
         var pages = await client.Databases.QueryAsync(_options.DatabaseId, parameters);
-        var tasks = pages.Results
-          .Select(x => ReadPageRows(client, x)
-            .ContinueWith(x => x.Result.ForEach(y => expressions.Add(y))));
 
-        await Task.WhenAll(tasks);
+        var data = pages.Results.Select(x =>
+        {
+          var expression = string.Empty;
+          var translation = string.Empty;
+          var addedAt = DateTime.MinValue;
+          var addedAndUpdated = DateTime.UtcNow;
+
+          if (x.Properties.TryGetValue(expressionKey, out var expressionProp))
+            expression = TextValue(expressionProp);
+
+          if (x.Properties.TryGetValue(translationKey, out var translationProp))
+            translation = TextValue(translationProp);
+
+          if (x.Properties.TryGetValue(addedKey, out var dateProp))
+            addedAt = dateProp is DatePropertyValue datePropValue ? datePropValue.Date.Start ?? datePropValue.Date.End ?? default : default;
+
+          return new NotionDbEntry(expression, translation, addedAt, x.Id, addedAndUpdated, addedAndUpdated);
+        }).ToList();
 
         parameters.StartCursor = pages.HasMore
           ? pages.NextCursor
           : null;
       }
       while (parameters.StartCursor != null);
-
-      var count = expressions.Count;
     }
 
-    private static async Task<List<LangExpression>> ReadPageRows(Notion.Client.NotionClient client, Page page)
+    private string TextValue(PropertyValue? notionProperty)
     {
-      var expressions = new List<LangExpression>();
-
-      var dbPageBlocks = await client.Blocks.RetrieveChildrenAsync(page.Id);
-      var table = dbPageBlocks.Results.FirstOrDefault(x => x.Type == BlockType.Table);
-      if (table == null)
-        return expressions;
-
-      var tableRows = await client.Blocks.RetrieveChildrenAsync(table.Id);
-      if (tableRows == null)
-        return expressions;
-
-      var tableRowBlocks = tableRows.Results.Cast<TableRowBlock>().ToList();
-
-      // i = 1 because the first row is always a heading row
-      for (var i = 1; i < tableRowBlocks.Count; i++)
+      return notionProperty switch
       {
-        var cells = tableRowBlocks[i].TableRow.Cells.ToList();
-        if (cells is not { Count: > 1 })
-          continue;
-
-        var invariant = cells[0].FirstOrDefault()?.PlainText;
-        var translation = cells[1].FirstOrDefault()?.PlainText;
-
-        if (invariant == null && translation == null)
-          continue;
-
-        expressions.Add(new LangExpression
-        {
-          Invariant = invariant,
-          Translation = translation
-        });
-      }
-
-      return expressions;
+        TitlePropertyValue x => x.Title.FirstOrDefault()?.PlainText ?? "no text were found in title property value",
+        RichTextPropertyValue x => x.RichText.FirstOrDefault()?.PlainText ?? "no text were found in rich text property value",
+        null => "null",
+        _ => $"no handler for {notionProperty.Type} was found"
+      };
     }
   }
 }
