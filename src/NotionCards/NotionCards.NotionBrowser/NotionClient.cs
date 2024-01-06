@@ -1,19 +1,37 @@
 ﻿using Microsoft.Extensions.Options;
 using Notion.Client;
-using NotionCards.Core.Entities;
-using System.Collections.Concurrent;
-using System.Linq.Expressions;
+using NotionCards.Storage;
 
 namespace NotionCards.NotionBrowser
 {
-  public record NotionDbEntry(string Expression, string Translation, DateTime AddedToNotion, string PageId, DateTime AddedAt, DateTime UpdatedAt);
+  public class NotionDbEntry
+  {
+    public NotionDbEntry(string Expression, string Translation, DateTime AddedToNotion, string PageId, DateTime AddedAt, DateTime UpdatedAt)
+    {
+      this.Expression = Expression;
+      this.Translation = Translation;
+      this.AddedToNotion = AddedToNotion;
+      this.PageId = PageId;
+      this.AddedAt = AddedAt;
+      this.UpdatedAt = UpdatedAt;
+    }
+
+    public string Expression { get; init; }
+    public string Translation { get; init; }
+    public DateTime AddedToNotion { get; init; }
+    public string PageId { get; init; }
+    public DateTime AddedAt { get; init; }
+    public DateTime UpdatedAt { get; init; }
+  }
 
   public class NotionClient
   {
     private readonly NotionOptions _options;
+    private AppDbContext _appDbContext;
 
-    public NotionClient(IOptions<NotionOptions> options)
+    public NotionClient(IOptions<NotionOptions> options, AppDbContext appDbContext)
     {
+      _appDbContext = appDbContext;
       _options = options.Value;
     }
 
@@ -57,11 +75,15 @@ namespace NotionCards.NotionBrowser
           return new NotionDbEntry(expression, translation, addedAt, x.Id, addedAndUpdated, addedAndUpdated);
         }).ToList();
 
+        await _appDbContext.AddRangeAsync(data);
+
         parameters.StartCursor = pages.HasMore
           ? pages.NextCursor
           : null;
       }
       while (parameters.StartCursor != null);
+
+      await _appDbContext.SaveChangesAsync()
     }
 
     private string TextValue(PropertyValue? notionProperty)

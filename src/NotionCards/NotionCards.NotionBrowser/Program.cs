@@ -6,7 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.Configure<NotionOptions>(builder.Configuration);
-builder.Services.AddSingleton<NotionClient>();
+builder.Services.AddScoped<NotionClient>();
 builder.Services.AddStorage();
 
 var app = builder.Build();
