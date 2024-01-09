@@ -69,6 +69,15 @@ namespace NotionCards.Core.Notion
       }
       while (parameters.StartCursor != null);
 
+      if (lastUpdate is null)
+        await _appDbContext.ImportHistories.AddAsync(new NotionDbImportHistory()
+        {
+          LastOperation = DateTime.UtcNow,
+          NotionDbId = _options.DatabaseId
+        });
+      else
+        lastUpdate.LastOperation = DateTime.UtcNow;
+
       await _appDbContext.SaveChangesAsync();
     }
 
