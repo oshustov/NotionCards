@@ -7,6 +7,7 @@ public class AppDbContext : DbContext
 {
   public DbSet<LearningPlan> LearningPlans { get; set; }
   public DbSet<NotionDbRecord> NotionDbRecords { get; set; }
+  public DbSet<NotionDbImportHistory> ImportHistories { get; set; }
 
   protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
   {
@@ -49,5 +50,11 @@ public class AppDbContext : DbContext
       .HasMany(x => x.Questions)
       .WithOne(x => x.LearningPlan)
       .IsRequired(false);
+
+    modelBuilder.Entity<NotionDbImportHistory>().HasKey(x => x.Id);
+    modelBuilder.Entity<NotionDbImportHistory>().Property(x => x.Id).UseIdentityColumn();
+    modelBuilder.Entity<NotionDbImportHistory>().Property(x => x.LastOperation).HasDefaultValueSql("GETUTCDATE()");
+    modelBuilder.Entity<NotionDbImportHistory>().Property(x => x.LastOperation).ValueGeneratedOnAdd();
+    modelBuilder.Entity<NotionDbImportHistory>().HasIndex(x => x.NotionDbId).IsUnique(true);
   }
 }

@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using NotionCards.NotionBrowser;
+using NotionCards.Core.Notion;
 using NotionCards.Storage;
 
 var builder = WebApplication.CreateBuilder(args);

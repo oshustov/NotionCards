@@ -1,6 +1,6 @@
 ﻿namespace NotionCards.Core.Entities
 {
-  public class NotionDbEntry
+  public class NotionDbRecord
   {
     public int Id { get; set; }
     public string NotionId { get; set; }

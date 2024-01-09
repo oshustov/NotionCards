@@ -15,7 +15,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NotionCards.Core\NotionCards.Core.csproj" />
-    <ProjectReference Include="..\NotionCards.Storage\NotionCards.Storage.csproj" />
   </ItemGroup>
 
 </Project>

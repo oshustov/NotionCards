@@ -1,4 +1,4 @@
-﻿namespace NotionCards.NotionBrowser
+﻿namespace NotionCards.Core.Notion
 {
   public class NotionOptions
   {
