@@ -42,7 +42,7 @@ app.MapPost("/sets", async ([FromServices] AppDbContext dbContext, [FromBody] Cr
   await dbContext.SaveChangesAsync();
 });
 
-app.MapPost("/sets/{setId:int}/cards:populate-with-notion", async ([FromServices] IEnumerable<ISetCardsSource> sources, [FromRoute] int setId, [FromServices] AppDbContext dbContext) =>
+app.MapPost("/sets/{setId:int}/cards:populate-with-notion", async ([FromRoute] int setId, [FromBody] PopulateWithNotionDto dto, [FromServices] IEnumerable<ISetCardsSource> sources, [FromServices] AppDbContext dbContext) =>
 {
   var set = await dbContext.Sets.FirstOrDefaultAsync(x => x.Id == setId);
   if (set == null)
@@ -52,8 +52,7 @@ app.MapPost("/sets/{setId:int}/cards:populate-with-notion", async ([FromServices
   if (source == null)
     return Results.BadRequest("No Notion source is configured.");
   
-  var cards = await source.GetCards();
-  set.Cards = new List<Card>();
+  var cards = await source.GetCards(dto);
   set.Cards.AddRange(cards);
   await dbContext.SaveChangesAsync();
 

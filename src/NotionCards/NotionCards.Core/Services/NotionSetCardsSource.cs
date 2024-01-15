@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using NotionCards.Core.Dto;
 using NotionCards.Core.Entities;
 using NotionCards.Storage;
 
@@ -6,27 +7,27 @@ namespace NotionCards.Core.Services;
 
 public interface ISetCardsSource
 {
-  Task<Card[]> GetCards();
+  Task<Card[]> GetCards(PopulateWithNotionDto parameters);
 }
 
 public class NotionSetCardsSource : ISetCardsSource
 {
-  public TimeSpan Period { get; set; } = TimeSpan.FromDays(1);
   public AppDbContext DbContext { get; set; }
 
   public NotionSetCardsSource(AppDbContext dbContext) => 
     DbContext = dbContext;
 
-  public async Task<Card[]> GetCards()
+  public async Task<Card[]> GetCards(PopulateWithNotionDto parameters)
   {
-    var lastAddedDate = await DbContext.NotionDbRecords
-      .OrderByDescending(x => x.DateAdded)
-      .FirstOrDefaultAsync();
+    IQueryable<NotionDbRecord> records = DbContext.NotionDbRecords;
 
-    var notionRecords = await DbContext.NotionDbRecords
-      .OrderByDescending(x => x.DateAdded)
-      .Where(x => x.DateAdded >= lastAddedDate.DateAdded.Subtract(Period))
-      .ToListAsync();
+    if (parameters.MinDate.HasValue)
+      records = records.Where(x => x.DateAdded >= parameters.MinDate.Value);
+
+    if (parameters.MaxDate.HasValue)
+      records = records.Where(x => x.DateAdded <= parameters.MaxDate.Value);
+
+    var notionRecords = await records.ToListAsync();
 
     var cards = notionRecords.Select(x => new Card()
     {
