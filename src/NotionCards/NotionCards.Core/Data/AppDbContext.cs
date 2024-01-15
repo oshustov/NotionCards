@@ -5,7 +5,7 @@ namespace NotionCards.Storage;
 
 public class AppDbContext : DbContext
 {
-  public DbSet<LearningPlan> LearningPlans { get; set; }
+  public DbSet<Set> Sets { get; set; }
   public DbSet<NotionDbRecord> NotionDbRecords { get; set; }
   public DbSet<NotionDbImportHistory> ImportHistories { get; set; }
 
@@ -17,38 +17,18 @@ public class AppDbContext : DbContext
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
-    modelBuilder.Entity<User>().HasKey(x => x.Id);
-    modelBuilder.Entity<User>()
-      .Property(x => x.Id)
-      .ValueGeneratedNever();
-
     modelBuilder.Entity<NotionDbRecord>().HasKey(x => x.Id);
     modelBuilder.Entity<NotionDbRecord>().Property(x => x.Id).UseIdentityColumn();
     modelBuilder.Entity<NotionDbRecord>().HasIndex(x => x.NotionId).IsUnique(true);
 
-    modelBuilder.Entity<QuestionAnswer>().HasKey(x => x.Id);
-    modelBuilder.Entity<QuestionAnswer>().Property(x => x.Id).UseIdentityColumn();
-    modelBuilder.Entity<QuestionAnswer>().HasOne(x => x.NotionDbRecord);
+    modelBuilder.Entity<Card>().HasKey(x => x.Id);
+    modelBuilder.Entity<Card>().Property(x => x.Id).UseIdentityColumn();
 
-    modelBuilder.Entity<Progress>().HasKey(x => new { x.AnswerId, x.QuestionId });
-    modelBuilder.Entity<Progress>().HasOne(x => x.Answer);
-
-    modelBuilder.Entity<LearningPlanQuestion>().HasKey(x => x.Id);
-    modelBuilder.Entity<LearningPlanQuestion>().Property(x => x.Id).UseIdentityColumn();
-    modelBuilder.Entity<LearningPlanQuestion>()
-      .HasMany(x => x.Answers)
-      .WithOne(x => x.LearnPlanQuestion)
-      .IsRequired(false);
-    modelBuilder.Entity<LearningPlanQuestion>()
-      .HasOne(x => x.Progress)
-      .WithOne(x => x.Question)
-      .IsRequired(true);
-
-    modelBuilder.Entity<LearningPlan>().HasKey(x => x.Id);
-    modelBuilder.Entity<LearningPlan>().Property(x => x.Id).UseIdentityColumn();
-    modelBuilder.Entity<LearningPlan>()
-      .HasMany(x => x.Questions)
-      .WithOne(x => x.LearningPlan)
+    modelBuilder.Entity<Set>().HasKey(x => x.Id);
+    modelBuilder.Entity<Set>().Property(x => x.Id).UseIdentityColumn();
+    modelBuilder.Entity<Set>()
+      .HasMany(x => x.Cards)
+      .WithOne(x => x.Set)
       .IsRequired(false);
 
     modelBuilder.Entity<NotionDbImportHistory>().HasKey(x => x.Id);
