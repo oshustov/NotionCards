@@ -56,7 +56,7 @@ namespace NotionCards.Core.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Card",
+                name: "Cards",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -67,17 +67,17 @@ namespace NotionCards.Core.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Card", x => x.Id);
+                    table.PrimaryKey("PK_Cards", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Card_Sets_SetId",
+                        name: "FK_Cards_Sets_SetId",
                         column: x => x.SetId,
                         principalTable: "Sets",
                         principalColumn: "Id");
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Card_SetId",
-                table: "Card",
+                name: "IX_Cards_SetId",
+                table: "Cards",
                 column: "SetId");
 
             migrationBuilder.CreateIndex(
@@ -97,7 +97,7 @@ namespace NotionCards.Core.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Card");
+                name: "Cards");
 
             migrationBuilder.DropTable(
                 name: "ImportHistories");

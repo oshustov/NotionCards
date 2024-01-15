@@ -12,7 +12,7 @@ using NotionCards.Storage;
 namespace NotionCards.Core.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20240115191716_initial")]
+    [Migration("20240115200437_initial")]
     partial class initial
     {
         /// <inheritdoc />
@@ -48,7 +48,7 @@ namespace NotionCards.Core.Data.Migrations
 
                     b.HasIndex("SetId");
 
-                    b.ToTable("Card");
+                    b.ToTable("Cards");
                 });
 
             modelBuilder.Entity("NotionCards.Core.Entities.NotionDbImportHistory", b =>

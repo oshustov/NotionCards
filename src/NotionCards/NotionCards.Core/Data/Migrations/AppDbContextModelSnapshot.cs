@@ -45,7 +45,7 @@ namespace NotionCards.Core.Data.Migrations
 
                     b.HasIndex("SetId");
 
-                    b.ToTable("Card");
+                    b.ToTable("Cards");
                 });
 
             modelBuilder.Entity("NotionCards.Core.Entities.NotionDbImportHistory", b =>

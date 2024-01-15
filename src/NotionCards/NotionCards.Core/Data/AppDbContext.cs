@@ -6,6 +6,7 @@ namespace NotionCards.Storage;
 public class AppDbContext : DbContext
 {
   public DbSet<Set> Sets { get; set; }
+  public DbSet<Card> Cards { get; set; } 
   public DbSet<NotionDbRecord> NotionDbRecords { get; set; }
   public DbSet<NotionDbImportHistory> ImportHistories { get; set; }
 

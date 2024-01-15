@@ -51,13 +51,66 @@ app.MapPost("/sets/{setId:int}/cards:populate-with-notion", async ([FromServices
   var source = sources.FirstOrDefault(x => x is NotionSetCardsSource);
   if (source == null)
     return Results.BadRequest("No Notion source is configured.");
-
+  
   var cards = await source.GetCards();
   set.Cards = new List<Card>();
   set.Cards.AddRange(cards);
   await dbContext.SaveChangesAsync();
 
   return Results.Ok(cards.Select(x => new CardCreatedDto(x.Id, x.SetId, x.FrontText, x.BackText)));
+});
+
+app.MapGet("sets/{setId:int}/cards", async ([FromRoute] int setId, [FromServices] AppDbContext dbContext) =>
+{
+  var cards = await dbContext.Cards.Where(x => x.SetId == setId).AsNoTracking().ToListAsync();
+  if (cards is null)
+    return Results.BadRequest("There is no such card");
+
+  return Results.Ok(cards.Select(x => new CardDto(x.Id, x.SetId, x.FrontText, x.BackText)));
+});
+
+app.MapPut("/cards/{cardId:int}", async ([FromRoute] int cardId, [FromBody] ChangeCardDto dto, [FromServices] AppDbContext dbContext) =>
+{
+  var card = await dbContext.Cards.FirstOrDefaultAsync(x => x.Id == cardId);
+  if (card is null)
+    return Results.BadRequest("There is no such card");
+
+  card.FrontText = dto.FrontText;
+  card.BackText = dto.BackText;
+
+  await dbContext.SaveChangesAsync();
+  return Results.Ok(new CardCreatedDto(card.Id, card.SetId, card.FrontText, card.BackText));
+});
+
+app.MapPost("/cards", async ([FromBody] CreateCardDto dto, [FromServices] AppDbContext dbContext) =>
+{
+  var set = await dbContext.Sets.FirstOrDefaultAsync(x => x.Id == dto.SetId);
+  if (set is null)
+    return Results.BadRequest("There is no such set");
+
+  var card = new Card()
+  {
+    SetId = dto.SetId,
+    FrontText = dto.FrontText,
+    BackText = dto.BackText
+  };
+
+  set.Cards.Add(card);
+  await dbContext.SaveChangesAsync();
+
+  return Results.Ok(new CardCreatedDto(card.Id, card.SetId, card.FrontText, card.BackText));
+});
+
+app.MapDelete("/cards/{cardId:int}", async ([FromRoute] int cardId, [FromServices] AppDbContext dbContext) =>
+{
+  var card = await dbContext.Cards.FirstOrDefaultAsync(x => x.Id == cardId);
+  if (card is null)
+    return Results.BadRequest("There is no such card");
+
+  dbContext.Remove(card);
+  await dbContext.SaveChangesAsync();
+
+  return Results.Ok();
 });
 
 app.Run();
