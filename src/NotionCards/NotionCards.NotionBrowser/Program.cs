@@ -1,5 +1,7 @@
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using NotionCards.Core.Data.Entities;
 using NotionCards.Core.Dto;
 using NotionCards.Core.Entities;
 using NotionCards.Core.Notion;
@@ -59,13 +61,17 @@ app.MapPost("/sets/{setId:int}/cards:populate-with-notion", async ([FromRoute] i
   return Results.Ok(cards.Select(x => new CardCreatedDto(x.Id, x.SetId, x.FrontText, x.BackText)));
 });
 
-app.MapGet("sets/{setId:int}/cards", async ([FromRoute] int setId, [FromServices] AppDbContext dbContext) =>
+app.MapPost("sets/{setId:int}/cards:list", async ([FromRoute] int setId, [FromBody] ListCardsDto dto, [FromServices] ICardsStorage storage) =>
 {
-  var cards = await dbContext.Cards.Where(x => x.SetId == setId).AsNoTracking().ToListAsync();
-  if (cards is null)
-    return Results.BadRequest("There is no such card");
+  var token = dto switch
+  {
+    {MaxCount: null, NextToken: null} => PaginationToken.All(),
+    {MaxCount: not null, NextToken: null} => PaginationToken.Start(dto.MaxCount.Value),
+    {NextToken: not null} => PaginationToken.FromStringToken(dto.NextToken)
+  };
 
-  return Results.Ok(cards.Select(x => new CardDto(x.Id, x.SetId, x.FrontText, x.BackText)));
+  var result = await storage.ListBySetId(setId, token);
+  return Results.Ok(new ListCardsResponseDto(result.NextToken?.GetString(), result.Result.Select(x => new CardDto(x.Id, x.SetId, x.FrontText, x.BackText)).ToArray()));
 });
 
 app.MapPut("/cards/{cardId:int}", async ([FromRoute] int cardId, [FromBody] ChangeCardDto dto, [FromServices] AppDbContext dbContext) =>

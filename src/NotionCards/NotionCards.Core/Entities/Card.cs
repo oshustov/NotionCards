@@ -7,5 +7,7 @@ public class Card
   public string FrontText { get; set; }
   public string BackText { get; set; }
 
+  public DateTime AddedTime { get; set; }
+
   public Set Set { get; set; }
 }

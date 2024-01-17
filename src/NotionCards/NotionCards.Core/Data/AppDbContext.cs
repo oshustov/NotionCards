@@ -24,6 +24,8 @@ public class AppDbContext : DbContext
 
     modelBuilder.Entity<Card>().HasKey(x => x.Id);
     modelBuilder.Entity<Card>().Property(x => x.Id).UseIdentityColumn();
+    modelBuilder.Entity<Card>().Property(x => x.AddedTime).HasDefaultValueSql("GETUTCDATE()");
+    modelBuilder.Entity<Card>().HasIndex(x => x.AddedTime).IsDescending(true);
 
     modelBuilder.Entity<Set>().HasKey(x => x.Id);
     modelBuilder.Entity<Set>().Property(x => x.Id).UseIdentityColumn();
