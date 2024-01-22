@@ -21,6 +21,7 @@ public class AppDbContext : DbContext
     modelBuilder.Entity<NotionDbRecord>().HasKey(x => x.Id);
     modelBuilder.Entity<NotionDbRecord>().Property(x => x.Id).UseIdentityColumn();
     modelBuilder.Entity<NotionDbRecord>().HasIndex(x => x.NotionId).IsUnique(true);
+    modelBuilder.Entity<NotionDbRecord>().HasIndex(x => x.DateAdded).IsDescending();
 
     modelBuilder.Entity<Card>().HasKey(x => x.Id);
     modelBuilder.Entity<Card>().Property(x => x.Id).UseIdentityColumn();

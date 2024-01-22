@@ -8,7 +8,7 @@ namespace NotionCards.Core.Services;
 
 public interface ICardsSource
 {
-  Task<Card[]> GetCards(PopulateWithNotionDto parameters);
+  Task<Card[]> GetCards(NotionCardSourceParams parameters);
 }
 
 public class NotionCardsSource : ICardsSource
@@ -18,7 +18,7 @@ public class NotionCardsSource : ICardsSource
   public NotionCardsSource(AppDbContext dbContext) => 
     DbContext = dbContext;
 
-  public async Task<Card[]> GetCards(PopulateWithNotionDto parameters)
+  public async Task<Card[]> GetCards(NotionCardSourceParams parameters)
   {
 
     return parameters.Range switch
