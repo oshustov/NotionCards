@@ -21,7 +21,7 @@ public class CardsStorage : ICardsStorage
 
   public async Task<PaginatedResponse<Card>> ListBySetId(int setId, PaginationToken token)
   {
-    var cards = token switch
+    var fetchedCards = token switch
     {
       { LastGivenId: null, MaxCount: null } =>
         await _dbContext.Cards
@@ -44,7 +44,7 @@ public class CardsStorage : ICardsStorage
         .ToListAsync(),
     };
 
-    if (cards is not { Count: > 0 })
+    if (fetchedCards is not { Count: > 0 })
       return new PaginatedResponse<Card>()
       {
         NextToken = null,
@@ -55,18 +55,17 @@ public class CardsStorage : ICardsStorage
       return new PaginatedResponse<Card>()
       {
         NextToken = null,
-        Result = cards.ToArray()
+        Result = fetchedCards.ToArray()
       };
-
-    var extraCard = cards.Last();
-    var thereAreMore = cards.Count > token.MaxCount && token.MaxCount.HasValue;
+    
+    var thereAreMore = token.MaxCount.HasValue && fetchedCards.Count > token.MaxCount;
     if (thereAreMore)
-      cards.Remove(extraCard);
+      fetchedCards.Remove(fetchedCards.Last());
 
     return new PaginatedResponse<Card>()
     {
-      NextToken = token.ContinueFrom(cards.Last().Id),
-      Result = cards.ToArray()
+      NextToken = token.ContinueFrom(fetchedCards.Last().Id),
+      Result = fetchedCards.ToArray()
     };
   }
 }

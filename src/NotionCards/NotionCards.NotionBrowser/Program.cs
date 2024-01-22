@@ -13,7 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.Configure<NotionOptions>(builder.Configuration);
 builder.Services.AddScoped<NotionClient>();
-builder.Services.AddTransient<ISetCardsSource, NotionSetCardsSource>();
+builder.Services.AddTransient<ICardsSource, NotionCardsSource>();
 builder.Services.AddStorage();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -44,13 +44,13 @@ app.MapPost("/sets", async ([FromServices] AppDbContext dbContext, [FromBody] Cr
   await dbContext.SaveChangesAsync();
 });
 
-app.MapPost("/sets/{setId:int}/cards:populate-with-notion", async ([FromRoute] int setId, [FromBody] PopulateWithNotionDto dto, [FromServices] IEnumerable<ISetCardsSource> sources, [FromServices] AppDbContext dbContext) =>
+app.MapPost("/sets/{setId:int}/cards:populate-with-notion", async ([FromRoute] int setId, [FromBody] PopulateWithNotionDto dto, [FromServices] IEnumerable<ICardsSource> sources, [FromServices] AppDbContext dbContext) =>
 {
   var set = await dbContext.Sets.FirstOrDefaultAsync(x => x.Id == setId);
   if (set == null)
     return Results.BadRequest("The set doesn't exist");
 
-  var source = sources.FirstOrDefault(x => x is NotionSetCardsSource);
+  var source = sources.FirstOrDefault(x => x is NotionCardsSource);
   if (source == null)
     return Results.BadRequest("No Notion source is configured.");
   
@@ -71,6 +71,9 @@ app.MapPost("sets/{setId:int}/cards:list", async ([FromRoute] int setId, [FromBo
   };
 
   var result = await storage.ListBySetId(setId, token);
+  if (dto.Shuffled)
+    Random.Shared.Shuffle(result.Result);
+
   return Results.Ok(new ListCardsResponseDto(result.NextToken?.GetString(), result.Result.Select(x => new CardDto(x.Id, x.SetId, x.FrontText, x.BackText)).ToArray()));
 });
 

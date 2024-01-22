@@ -5,16 +5,16 @@ using NotionCards.Storage;
 
 namespace NotionCards.Core.Services;
 
-public interface ISetCardsSource
+public interface ICardsSource
 {
   Task<Card[]> GetCards(PopulateWithNotionDto parameters);
 }
 
-public class NotionSetCardsSource : ISetCardsSource
+public class NotionCardsSource : ICardsSource
 {
   public AppDbContext DbContext { get; set; }
 
-  public NotionSetCardsSource(AppDbContext dbContext) => 
+  public NotionCardsSource(AppDbContext dbContext) => 
     DbContext = dbContext;
 
   public async Task<Card[]> GetCards(PopulateWithNotionDto parameters)
