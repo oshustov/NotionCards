@@ -10,7 +10,17 @@ public record CreateCardDto(int SetId, string FrontText, string BackText);
 
 public record CardDto(int CardId, int SetId, string FrontText, string BackText);
 
-public record PopulateWithNotionDto(DateTime? MinDate, DateTime? MaxDate);
+public enum NotionRecordsRange
+{
+  LastWeek,
+  LastMonth,
+  All,
+  ExactDatesRange,
+  Top50,
+  Top100
+};
 
-public record ListCardsDto(string? NextToken, int? MaxCount, bool Shuffled = false);
+public record PopulateWithNotionDto(DateTime? MinDate, DateTime? MaxDate, NotionRecordsRange Range);
+
+public record ListCardsDto(string? NextToken, int? MaxCount, bool? Shuffled = false);
 public record ListCardsResponseDto(string? NextToken, CardDto[] Cards);

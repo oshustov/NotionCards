@@ -71,7 +71,7 @@ app.MapPost("sets/{setId:int}/cards:list", async ([FromRoute] int setId, [FromBo
   };
 
   var result = await storage.ListBySetId(setId, token);
-  if (dto.Shuffled)
+  if (dto.Shuffled is true)
     Random.Shared.Shuffle(result.Result);
 
   return Results.Ok(new ListCardsResponseDto(result.NextToken?.GetString(), result.Result.Select(x => new CardDto(x.Id, x.SetId, x.FrontText, x.BackText)).ToArray()));

@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Notion.Client;
 using NotionCards.Core.Dto;
 using NotionCards.Core.Entities;
 using NotionCards.Storage;
@@ -19,22 +20,47 @@ public class NotionCardsSource : ICardsSource
 
   public async Task<Card[]> GetCards(PopulateWithNotionDto parameters)
   {
+
+    return parameters.Range switch
+    {
+      NotionRecordsRange.ExactDatesRange => await ExactDatesRangeCards(parameters.MinDate, parameters.MaxDate),
+      NotionRecordsRange.LastMonth => await ExactDatesRangeCards(DateTime.UtcNow.AddMonths(-1), maxDate: null),
+      NotionRecordsRange.LastWeek => await ExactDatesRangeCards(DateTime.UtcNow.AddDays(-7), maxDate: null),
+      NotionRecordsRange.Top100 => await TopCards(top: 100),
+      NotionRecordsRange.Top50 => await TopCards(top: 50),
+      NotionRecordsRange.All => await ExactDatesRangeCards(minDate:null, maxDate:null)
+    };
+  }
+
+  private async Task<Card[]> TopCards(int top)
+  {
+    var records = await DbContext.NotionDbRecords
+      .OrderByDescending(x => x.DateAdded)
+      .Take(top)
+      .ToListAsync();
+
+    return records.Select(ToCard).ToArray();
+  }
+
+  private async Task<Card[]> ExactDatesRangeCards(DateTime? minDate, DateTime? maxDate)
+  {
     IQueryable<NotionDbRecord> records = DbContext.NotionDbRecords;
 
-    if (parameters.MinDate.HasValue)
-      records = records.Where(x => x.DateAdded >= parameters.MinDate.Value);
+    if (minDate.HasValue)
+      records = records.Where(x => x.DateAdded >= minDate.Value);
 
-    if (parameters.MaxDate.HasValue)
-      records = records.Where(x => x.DateAdded <= parameters.MaxDate.Value);
+    if (maxDate.HasValue)
+      records = records.Where(x => x.DateAdded <= maxDate.Value);
 
     var notionRecords = await records.ToListAsync();
 
-    var cards = notionRecords.Select(x => new Card()
-    {
-      FrontText = x.Text,
-      BackText = x.Translation
-    }).ToArray();
+    var cards = notionRecords.Select(ToCard).ToArray();
 
     return cards;
+  }
+
+  private Card ToCard(NotionDbRecord x)
+  {
+    return new Card() {FrontText = x.Text, BackText = x.Translation};
   }
 }
