@@ -26,7 +26,6 @@ public class CardsStorage : ICardsStorage
       { LastGivenId: null, MaxCount: null } =>
         await _dbContext.Cards
         .Where(x => x.SetId == setId)
-        .OrderBy(x => x.AddedTime)
         .AsNoTracking()
         .ToListAsync(),
 
@@ -34,7 +33,6 @@ public class CardsStorage : ICardsStorage
         await _dbContext.Cards
           .Where(x => x.SetId == setId && x.Id > token.LastGivenId.Value)
           .Take(token.MaxCount.Value + 1)
-          .OrderBy(x => x.AddedTime)
           .AsNoTracking()
           .ToListAsync(),
 
@@ -42,7 +40,6 @@ public class CardsStorage : ICardsStorage
         await _dbContext.Cards
         .Where(x => x.SetId == setId)
         .Take(token.MaxCount.Value + 1)
-        .OrderBy(x => x.AddedTime)
         .AsNoTracking()
         .ToListAsync(),
     };
