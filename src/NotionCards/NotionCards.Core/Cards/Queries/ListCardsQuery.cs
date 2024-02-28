@@ -28,7 +28,7 @@ public class ListCardsQuery : IRequest<ListCardsResponseDto>
       {
         { MaxCount: null, NextPageToken: null } => PaginationToken.All(),
         { MaxCount: not null, NextPageToken: null } => PaginationToken.Start(request.MaxCount.Value),
-        { NextPageToken: not null } => PaginationToken.FromStringToken(request.NextPageToken)
+        { NextPageToken: not null } => PaginationToken.FromString(request.NextPageToken)
       };
 
       var result = await _cardsStorage.ListBySetId(request.SetId, token);

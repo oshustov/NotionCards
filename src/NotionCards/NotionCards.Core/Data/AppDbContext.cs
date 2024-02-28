@@ -30,6 +30,7 @@ public class AppDbContext : DbContext
 
     modelBuilder.Entity<Set>().HasKey(x => x.Id);
     modelBuilder.Entity<Set>().Property(x => x.Id).UseIdentityColumn();
+    modelBuilder.Entity<Set>().Property(x => x.Created).HasDefaultValueSql("GETUTCDATE()").IsRequired(false);
     modelBuilder.Entity<Set>()
       .HasMany(x => x.Cards)
       .WithOne(x => x.Set)

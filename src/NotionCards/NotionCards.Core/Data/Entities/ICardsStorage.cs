@@ -23,15 +23,15 @@ public class CardsStorage : ICardsStorage
   {
     var fetchedCards = token switch
     {
-      { LastGivenId: null, MaxCount: null } =>
+      { LastId: null, MaxCount: null } =>
         await _dbContext.Cards
         .Where(x => x.SetId == setId)
         .AsNoTracking()
         .ToListAsync(),
 
-      { LastGivenId: not null, MaxCount: not null } =>
+      { LastId: not null, MaxCount: not null } =>
         await _dbContext.Cards
-          .Where(x => x.SetId == setId && x.Id > token.LastGivenId.Value)
+          .Where(x => x.SetId == setId && x.Id > token.LastId.Value)
           .Take(token.MaxCount.Value + 1)
           .AsNoTracking()
           .ToListAsync(),

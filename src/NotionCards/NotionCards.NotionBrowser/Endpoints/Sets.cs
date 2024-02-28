@@ -14,8 +14,14 @@ public static partial class RouteGroupBuilderExtensions
     builder.MapPost("{setId:int}/cards:list", ListCards);
     builder.MapPost("/{setId:int}/cards:populate-with-notion", PopulateSetWithNotion);
     builder.MapPost("/{setId:int}/cards", CreateCard);
+    builder.MapGet("/", ListSets);
 
     return builder;
+  }
+
+  private static async Task<IResult> ListSets([FromServices] ISender sender)
+  {
+    return Results.Ok();
   }
 
   private static async Task<IResult> CreateSet([FromBody] CreateSetCommand command, [FromServices] ISender sender)
