@@ -18,4 +18,8 @@
     <ProjectReference Include="..\NotionCards.Core\NotionCards.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
 </Project>

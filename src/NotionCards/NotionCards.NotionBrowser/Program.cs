@@ -25,8 +25,11 @@ app.UseSwagger();
 app.UseSwaggerUI(x =>
 {
   x.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
-  x.RoutePrefix = string.Empty;
+  x.RoutePrefix = "swagger";
 });
+
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 app.MapGroup("/sets").MapSetEndpoints().WithTags("Sets");
 app.MapGroup("/cards").MapCardsEndpoints().WithTags("Cards");
@@ -35,5 +38,7 @@ app.MapPost("/notion:import", async ([FromServices] NotionClient client) =>
 {
   await client.ReadEntireDb();
 });
+
+app.MapFallbackToFile("index.html");
 
 app.Run();
