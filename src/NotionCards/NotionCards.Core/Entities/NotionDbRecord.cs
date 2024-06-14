@@ -4,6 +4,7 @@
   {
     public int Id { get; set; }
     public string NotionId { get; set; }
+    public string NotionDbId { get; set; }
     public string Text { get; set; }
     public string Translation { get; set; }
     public EntryType Type { get; set; }

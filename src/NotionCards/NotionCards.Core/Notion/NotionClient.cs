@@ -61,6 +61,8 @@ namespace NotionCards.Core.Notion
         }).ToList();
 
         var records = MapToNotionDbRecords(parsedPages);
+        records.ForEach(x => x.NotionDbId = _options.DatabaseId);
+
         await _appDbContext.NotionDbRecords.AddRangeAsync(records);
 
         parameters.StartCursor = pages.HasMore
