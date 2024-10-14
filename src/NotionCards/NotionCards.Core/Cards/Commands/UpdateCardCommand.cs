@@ -31,7 +31,7 @@ public class UpdateCardCommand : IRequest<CreatedCardDto>
 
       await _appDbContext.SaveChangesAsync(cancellationToken);
 
-      return new CreatedCardDto(card.Id, card.SetId, card.FrontText, card.BackText);
+      return new CreatedCardDto(card.Id, default, card.FrontText, card.BackText);
     }
   }
 }

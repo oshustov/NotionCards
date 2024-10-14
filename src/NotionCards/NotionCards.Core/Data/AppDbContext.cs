@@ -13,7 +13,7 @@ public class AppDbContext : DbContext
   protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
   {
     optionsBuilder
-      .UseSqlServer(connectionString: "Data Source=(LocalDb)\\MSSQLLocalDB;Initial Catalog=NotionCards;TrustServerCertificate=true");
+      .UseSqlServer(connectionString: "Data SourceKind=(LocalDb)\\MSSQLLocalDB;Initial Catalog=LeitnerCards;TrustServerCertificate=true");
   }
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -31,11 +31,22 @@ public class AppDbContext : DbContext
 
     modelBuilder.Entity<Set>().HasKey(x => x.Id);
     modelBuilder.Entity<Set>().Property(x => x.Id).UseIdentityColumn();
-    modelBuilder.Entity<Set>().Property(x => x.Created).HasDefaultValueSql("GETUTCDATE()");
+    modelBuilder.Entity<Set>().Property(x => x.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
     modelBuilder.Entity<Set>()
-      .HasMany(x => x.Cards)
+      .HasMany(x => x.Boxes)
       .WithOne(x => x.Set)
-      .IsRequired(false);
+      .IsRequired();
+
+    modelBuilder.Entity<LeitnerBoxCard>().HasKey(x => x.Id);
+    modelBuilder.Entity<LeitnerBoxCard>().Property(x => x.Id).UseIdentityColumn();
+    modelBuilder.Entity<LeitnerBoxCard>().HasIndex(x => x.LeitnerBoxId);
+
+    modelBuilder.Entity<LeitnerBox>().HasKey(x => x.Id);
+    modelBuilder.Entity<LeitnerBox>().Property(x => x.Id).UseIdentityColumn();
+    modelBuilder.Entity<LeitnerBox>().HasIndex(x => x.SetId);
+
+    modelBuilder.Entity<UserSetState>().HasKey(x => new { x.UserId, x.SetId });
+    modelBuilder.Entity<UserSetState>().HasIndex(x => new { x.UserId, x.SetId });
 
     modelBuilder.Entity<NotionDbImportHistory>().HasKey(x => x.Id);
     modelBuilder.Entity<NotionDbImportHistory>().Property(x => x.Id).UseIdentityColumn();

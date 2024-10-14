@@ -41,7 +41,7 @@ public class ListCardsQuery : IRequest<ListCardsResponseDto>
 
     private CardDto Selector(Card x)
     {
-      return new CardDto(x.Id, x.SetId, x.FrontText, x.BackText);
+      return new CardDto(x.Id, default, x.FrontText, x.BackText);
     }
   }
 }

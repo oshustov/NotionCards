@@ -36,10 +36,10 @@ public class PopulateSetWithNotionCommand : IRequest<IEnumerable<CreatedCardDto>
         throw new ArgumentException("No Notion source is configured.");
 
       var cards = await source.GetCards(new NotionCardSourceParams(request.MinDate, request.MaxDate, request.Range));
-      set.Cards.AddRange(cards);
+
       await _appDbContext.SaveChangesAsync(cancellationToken);
 
-      return cards.Select(x => new CreatedCardDto(x.Id, x.SetId, x.FrontText, x.BackText));
+      return cards.Select(x => new CreatedCardDto(x.Id, default, x.FrontText, x.BackText));
     }
   }
 }

@@ -61,6 +61,6 @@ public class NotionCardsSource : ICardsSource
 
   private Card ToCard(NotionDbRecord x)
   {
-    return new Card() {FrontText = x.Text, BackText = x.Translation};
+    return new Card() {FrontText = x.FrontText, BackText = x.BackText};
   }
 }

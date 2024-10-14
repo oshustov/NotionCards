@@ -88,10 +88,9 @@ namespace NotionCards.Core.Notion
       return fields.Select(x => new NotionDbRecord()
       {
         NotionId = x.NotionId,
-        Type = EntryType.Expression,
         DateAdded = DateTime.Parse(x.FieldsByName.GetValueOrDefault("Date")!.Value),
-        Text = x.FieldsByName.GetValueOrDefault("Expression")!.Value,
-        Translation = x.FieldsByName.GetValueOrDefault("Meaning/translation")!.Value
+        FrontText = x.FieldsByName.GetValueOrDefault("Expression")!.Value,
+        BackText = x.FieldsByName.GetValueOrDefault("Meaning/translation")!.Value
       }).ToList();
     }
 

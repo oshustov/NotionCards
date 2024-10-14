@@ -25,7 +25,7 @@ public class ListSetsQuery : ListQuery, IRequest<IEnumerable<SetDto>>
         .
         ToListAsync(cancellationToken);
 
-      return sets.Select(x => new SetDto(x.Id, x.Name, x.Created));
+      return sets.Select(x => new SetDto(x.Id, x.Name, x.CreatedAt));
     }
   }
 }
