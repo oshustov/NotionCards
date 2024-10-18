@@ -1,5 +1,8 @@
 ﻿using System.Collections.Frozen;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
 using Notion.Client;
 using NotionCards.Core.Entities;
 using NotionCards.Storage;
@@ -17,12 +20,12 @@ namespace NotionCards.Core.Notion
 
   public record NotionPage(string NotionId, FrozenDictionary<string, NotionField> FieldsByName);
 
-  public class NotionClient
+  public class NotionClientAdapter
   {
     private readonly NotionOptions _options;
     private readonly AppDbContext _appDbContext;
 
-    public NotionClient(IOptions<NotionOptions> options, AppDbContext appDbContext)
+    public NotionClientAdapter(IOptions<NotionOptions> options, AppDbContext appDbContext)
     {
       _appDbContext = appDbContext;
       _options = options.Value;
@@ -32,20 +35,26 @@ namespace NotionCards.Core.Notion
     {
       var client = NotionClientFactory.Create(new ClientOptions { AuthToken = _options.NotionSecretId });
 
-      var lastUpdate = _appDbContext.ImportHistories.FirstOrDefault(x => x.NotionDbId == _options.DatabaseId);
+      var lastUpdate = _appDbContext.NotionDbPulls.FirstOrDefault(x => x.NotionDbId == _options.DatabaseId);
 
-      var fetchForPeriod = lastUpdate?.LastOperation ?? DateTime.MinValue;
+      var fetchForPeriod = lastUpdate?.LastRecordDateTime ?? DateTime.MinValue;
       var parameters = new DatabasesQueryParameters()
       {
         PageSize = 100,
         StartCursor = null,
         Filter = new DateFilter("Date", onOrAfter: fetchForPeriod),
-        Sorts = new List<Sort>()
-        {
-          new() { Direction = Direction.Descending, Timestamp = Timestamp.CreatedTime }
-        }
+        Sorts = [new() { Direction = Direction.Descending, Timestamp = Timestamp.CreatedTime }]
       };
 
+      var dbSetup = await _appDbContext.NotionDbs.FindAsync(_options.DatabaseId);
+      if (dbSetup is null)
+        throw new InvalidOperationException("There is no database setup for that operation.");
+
+      var parsedJson = JsonDocument.Parse(dbSetup.FieldMappings);
+      var frontTextField = parsedJson.RootElement.GetProperty("frontText").GetString();
+      var backTextField = parsedJson.RootElement.GetProperty("backText").GetString();
+
+      DateTime lastRecordDateTime;
       do
       {
         var pages = await client.Databases.QueryAsync(_options.DatabaseId, parameters);
@@ -60,10 +69,10 @@ namespace NotionCards.Core.Notion
           return new NotionPage(x.Id, properties.ToFrozenDictionary(y => y.Name, y => y));
         }).ToList();
 
-        var records = MapToNotionDbRecords(parsedPages);
-        records.ForEach(x => x.NotionDbId = _options.DatabaseId);
+        var records = MapToCards(parsedPages, frontTextField, backTextField);
+        lastRecordDateTime = records.First().AddedTime;
 
-        await _appDbContext.NotionDbRecords.AddRangeAsync(records);
+        await _appDbContext.Cards.AddRangeAsync(records);
 
         parameters.StartCursor = pages.HasMore
           ? pages.NextCursor
@@ -72,25 +81,24 @@ namespace NotionCards.Core.Notion
       while (parameters.StartCursor != null);
 
       if (lastUpdate is null)
-        await _appDbContext.ImportHistories.AddAsync(new NotionDbImportHistory()
+        await _appDbContext.NotionDbPulls.AddAsync(new NotionDbPull()
         {
-          LastOperation = DateTime.UtcNow,
+          LastRecordDateTime = lastRecordDateTime,
           NotionDbId = _options.DatabaseId
         });
       else
-        lastUpdate.LastOperation = DateTime.UtcNow;
+        lastUpdate.LastRecordDateTime = DateTime.UtcNow;
 
       await _appDbContext.SaveChangesAsync();
     }
 
-    private List<NotionDbRecord> MapToNotionDbRecords(List<NotionPage> fields)
+    private List<Card> MapToCards(List<NotionPage> fields, string frontTextField, string backTextField)
     {
-      return fields.Select(x => new NotionDbRecord()
+      return fields.Select(x => new Card()
       {
-        NotionId = x.NotionId,
-        DateAdded = DateTime.Parse(x.FieldsByName.GetValueOrDefault("Date")!.Value),
-        FrontText = x.FieldsByName.GetValueOrDefault("Expression")!.Value,
-        BackText = x.FieldsByName.GetValueOrDefault("Meaning/translation")!.Value
+        AddedTime = DateTime.Parse(x.FieldsByName.GetValueOrDefault("Date")!.Value),
+        FrontText = x.FieldsByName.GetValueOrDefault(frontTextField)!.Value,
+        BackText = x.FieldsByName.GetValueOrDefault(backTextField)!.Value
       }).ToList();
     }
 

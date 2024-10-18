@@ -12,8 +12,8 @@ using NotionCards.Storage;
 namespace NotionCards.Core.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20241014190709_New")]
-    partial class New
+    [Migration("20241018165759_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -102,67 +102,38 @@ namespace NotionCards.Core.Data.Migrations
                     b.ToTable("LeitnerBoxCard");
                 });
 
-            modelBuilder.Entity("NotionCards.Core.Entities.NotionDbImportHistory", b =>
+            modelBuilder.Entity("NotionCards.Core.Entities.NotionDbPull", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("LastOperation")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
                     b.Property<string>("NotionDbId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.HasKey("Id");
-
-                    b.HasIndex("NotionDbId")
-                        .IsUnique();
-
-                    b.ToTable("ImportHistories");
-                });
-
-            modelBuilder.Entity("NotionCards.Core.Entities.NotionDbRecord", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("BackText")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("DateAdded")
+                    b.Property<DateTime>("LastRecordDateTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("FrontText")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.HasKey("NotionDbId");
 
+                    b.ToTable("NotionDbPulls");
+                });
+
+            modelBuilder.Entity("NotionCards.Core.Entities.NotionDbSetup", b =>
+                {
                     b.Property<string>("NotionDbId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("NotionId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.HasKey("Id");
+                    b.Property<string>("FieldMappings")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
-                    b.HasIndex("DateAdded")
-                        .IsDescending();
+                    b.Property<string>("NotionDbName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
-                    b.HasIndex("NotionId")
-                        .IsUnique();
+                    b.Property<TimeSpan?>("PullingInterval")
+                        .HasColumnType("time");
 
-                    b.ToTable("NotionDbRecords");
+                    b.HasKey("NotionDbId");
+
+                    b.ToTable("NotionDbs");
                 });
 
             modelBuilder.Entity("NotionCards.Core.Entities.Set", b =>

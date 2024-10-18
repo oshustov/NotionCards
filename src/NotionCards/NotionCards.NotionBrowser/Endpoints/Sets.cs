@@ -31,10 +31,9 @@ public static partial class RouteGroupBuilderExtensions
     return Results.Ok(result);
   }
 
-  private static async Task<IResult> PopulateSetWithNotion([FromRoute] int setId, [FromBody] PopulateSetWithNotionCommand command, [FromServices] ISender sender)
+  private static async Task<IResult> PopulateSetWithNotion([FromRoute] int setId, [FromBody] AddNotionDbIntegrationCommand dbIntegrationCommand, [FromServices] ISender sender)
   {
-    command.SetId = setId;
-    var createdCards = await sender.Send(command);
+    var createdCards = await sender.Send(dbIntegrationCommand);
     return Results.Ok(createdCards);
   }
 

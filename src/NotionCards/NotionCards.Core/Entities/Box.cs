@@ -1,6 +1,6 @@
 ﻿namespace NotionCards.Core.Entities;
 
-public class LeitnerBox
+public class Box
 {
   public int Id { get; set; }
   public int Frequency { get; set; }

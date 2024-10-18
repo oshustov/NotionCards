@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace NotionCards.Core.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class New : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -28,21 +28,7 @@ namespace NotionCards.Core.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ImportHistories",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    NotionDbId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    LastOperation = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ImportHistories", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "LeitnerBoxCard",
+                name: "BoxCard",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -56,20 +42,29 @@ namespace NotionCards.Core.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "NotionDbRecords",
+                name: "NotionDbPulls",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    NotionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    NotionDbId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    FrontText = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    BackText = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    DateAdded = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    NotionDbId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    LastRecordDateTime = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_NotionDbRecords", x => x.Id);
+                    table.PrimaryKey("PK_NotionDbPulls", x => x.NotionDbId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "NotionDbs",
+                columns: table => new
+                {
+                    NotionDbId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    FieldMappings = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    NotionDbName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PullingInterval = table.Column<TimeSpan>(type: "time", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NotionDbs", x => x.NotionDbId);
                 });
 
             migrationBuilder.CreateTable(
@@ -100,7 +95,7 @@ namespace NotionCards.Core.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "LeitnerBox",
+                name: "Box",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -127,32 +122,14 @@ namespace NotionCards.Core.Data.Migrations
                 descending: new bool[0]);
 
             migrationBuilder.CreateIndex(
-                name: "IX_ImportHistories_NotionDbId",
-                table: "ImportHistories",
-                column: "NotionDbId",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_LeitnerBox_SetId",
-                table: "LeitnerBox",
+                table: "Box",
                 column: "SetId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_LeitnerBoxCard_LeitnerBoxId",
-                table: "LeitnerBoxCard",
+                table: "BoxCard",
                 column: "LeitnerBoxId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_NotionDbRecords_DateAdded",
-                table: "NotionDbRecords",
-                column: "DateAdded",
-                descending: new bool[0]);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_NotionDbRecords_NotionId",
-                table: "NotionDbRecords",
-                column: "NotionId",
-                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserSetState_UserId_SetId",
@@ -167,16 +144,16 @@ namespace NotionCards.Core.Data.Migrations
                 name: "Cards");
 
             migrationBuilder.DropTable(
-                name: "ImportHistories");
+                name: "Box");
 
             migrationBuilder.DropTable(
-                name: "LeitnerBox");
+                name: "BoxCard");
 
             migrationBuilder.DropTable(
-                name: "LeitnerBoxCard");
+                name: "NotionDbPulls");
 
             migrationBuilder.DropTable(
-                name: "NotionDbRecords");
+                name: "NotionDbs");
 
             migrationBuilder.DropTable(
                 name: "UserSetState");

@@ -7,23 +7,18 @@ public class AppDbContext : DbContext
 {
   public DbSet<Set> Sets { get; set; }
   public DbSet<Card> Cards { get; set; } 
-  public DbSet<NotionDbRecord> NotionDbRecords { get; set; }
-  public DbSet<NotionDbImportHistory> ImportHistories { get; set; }
+
+  public DbSet<NotionDbSetup> NotionDbs { get; set; }
+  public DbSet<NotionDbPull> NotionDbPulls { get; set; }
 
   protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
   {
     optionsBuilder
-      .UseSqlServer(connectionString: "Data SourceKind=(LocalDb)\\MSSQLLocalDB;Initial Catalog=LeitnerCards;TrustServerCertificate=true");
+      .UseSqlServer(connectionString: "Server=(LocalDb)\\MSSQLLocalDB;Database=LeitnerCards;TrustServerCertificate=true");
   }
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
-    modelBuilder.Entity<NotionDbRecord>().HasKey(x => x.Id);
-    modelBuilder.Entity<NotionDbRecord>().Property(x => x.Id).UseIdentityColumn();
-    modelBuilder.Entity<NotionDbRecord>().HasIndex(x => x.NotionId).IsUnique(true);
-    modelBuilder.Entity<NotionDbRecord>().Property(x => x.NotionDbId).IsRequired();
-    modelBuilder.Entity<NotionDbRecord>().HasIndex(x => x.DateAdded).IsDescending();
-
     modelBuilder.Entity<Card>().HasKey(x => x.Id);
     modelBuilder.Entity<Card>().Property(x => x.Id).UseIdentityColumn();
     modelBuilder.Entity<Card>().Property(x => x.AddedTime).HasDefaultValueSql("GETUTCDATE()");
@@ -37,21 +32,21 @@ public class AppDbContext : DbContext
       .WithOne(x => x.Set)
       .IsRequired();
 
-    modelBuilder.Entity<LeitnerBoxCard>().HasKey(x => x.Id);
-    modelBuilder.Entity<LeitnerBoxCard>().Property(x => x.Id).UseIdentityColumn();
-    modelBuilder.Entity<LeitnerBoxCard>().HasIndex(x => x.LeitnerBoxId);
+    modelBuilder.Entity<BoxCard>().HasKey(x => x.Id);
+    modelBuilder.Entity<BoxCard>().Property(x => x.Id).UseIdentityColumn();
+    modelBuilder.Entity<BoxCard>().HasIndex(x => x.LeitnerBoxId);
 
-    modelBuilder.Entity<LeitnerBox>().HasKey(x => x.Id);
-    modelBuilder.Entity<LeitnerBox>().Property(x => x.Id).UseIdentityColumn();
-    modelBuilder.Entity<LeitnerBox>().HasIndex(x => x.SetId);
+    modelBuilder.Entity<Box>().HasKey(x => x.Id);
+    modelBuilder.Entity<Box>().Property(x => x.Id).UseIdentityColumn();
+    modelBuilder.Entity<Box>().HasIndex(x => x.SetId);
 
     modelBuilder.Entity<UserSetState>().HasKey(x => new { x.UserId, x.SetId });
     modelBuilder.Entity<UserSetState>().HasIndex(x => new { x.UserId, x.SetId });
 
-    modelBuilder.Entity<NotionDbImportHistory>().HasKey(x => x.Id);
-    modelBuilder.Entity<NotionDbImportHistory>().Property(x => x.Id).UseIdentityColumn();
-    modelBuilder.Entity<NotionDbImportHistory>().Property(x => x.LastOperation).HasDefaultValueSql("GETUTCDATE()");
-    modelBuilder.Entity<NotionDbImportHistory>().Property(x => x.LastOperation).ValueGeneratedOnAdd();
-    modelBuilder.Entity<NotionDbImportHistory>().HasIndex(x => x.NotionDbId).IsUnique(true);
+    modelBuilder.Entity<NotionDbSetup>().HasKey(x => x.NotionDbId);
+    modelBuilder.Entity<NotionDbSetup>().Property(x => x.PullingInterval).IsRequired(false);
+
+    modelBuilder.Entity<NotionDbPull>().HasKey(x => x.NotionDbId);
+    modelBuilder.Entity<NotionDbPull>().Property(x => x.LastRecordDateTime).IsRequired();
   }
 }

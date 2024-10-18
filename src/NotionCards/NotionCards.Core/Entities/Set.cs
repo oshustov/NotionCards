@@ -6,5 +6,5 @@ public class Set
   public string Name { get; set; }
   public DateTime CreatedAt { get; set; }
 
-  public List<LeitnerBox> Boxes { get; set; }
+  public List<Box> Boxes { get; set; }
 }
