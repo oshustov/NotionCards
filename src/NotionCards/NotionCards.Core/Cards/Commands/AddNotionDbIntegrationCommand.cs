@@ -3,6 +3,7 @@ using MediatR;
 using Notion.Client;
 using NotionCards.Core.Dto;
 using NotionCards.Core.Entities;
+using NotionCards.Core.Notion;
 using NotionCards.Storage;
 
 namespace NotionCards.Core.Cards.Commands;
@@ -18,11 +19,13 @@ public class AddNotionDbIntegrationCommand : IRequest<AddNotionDbIntegrationComm
   {
     private readonly AppDbContext _appDbContext;
     private readonly NotionClient _notionClient;
+    private readonly NotionClientAdapter _notionClientAdapter;
 
-    public Handler(AppDbContext appDbContext, NotionClient notionClient)
+    public Handler(AppDbContext appDbContext, NotionClient notionClient, NotionClientAdapter notionClientAdapter)
     {
       _appDbContext = appDbContext;
       _notionClient = notionClient;
+      _notionClientAdapter = notionClientAdapter;
     }
 
     public async Task<AddNotionDbIntegrationCommandResponse> Handle(AddNotionDbIntegrationCommand request, CancellationToken cancellationToken)
@@ -54,6 +57,8 @@ public class AddNotionDbIntegrationCommand : IRequest<AddNotionDbIntegrationComm
 
         await _appDbContext.NotionDbs.AddAsync(setup, cancellationToken);
         await _appDbContext.SaveChangesAsync(cancellationToken);
+
+        await _notionClientAdapter.ReadEntireDb(request.NotionDbId);
 
         return new AddNotionDbIntegrationCommandResponse(true, db.Title[0].PlainText);
       }

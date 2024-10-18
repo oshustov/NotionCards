@@ -1,8 +1,6 @@
 ﻿using System.Collections.Frozen;
 using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json.Linq;
 using Notion.Client;
 using NotionCards.Core.Entities;
 using NotionCards.Storage;
@@ -24,17 +22,17 @@ namespace NotionCards.Core.Notion
   {
     private readonly NotionOptions _options;
     private readonly AppDbContext _appDbContext;
+    private readonly NotionClient _client;
 
-    public NotionClientAdapter(IOptions<NotionOptions> options, AppDbContext appDbContext)
+    public NotionClientAdapter(IOptions<NotionOptions> options, AppDbContext appDbContext, NotionClient client)
     {
       _appDbContext = appDbContext;
+      _client = client;
       _options = options.Value;
     }
 
-    public async Task ReadEntireDb()
+    public async Task ReadEntireDb(string requestNotionDbId)
     {
-      var client = NotionClientFactory.Create(new ClientOptions { AuthToken = _options.NotionSecretId });
-
       var lastUpdate = _appDbContext.NotionDbPulls.FirstOrDefault(x => x.NotionDbId == _options.DatabaseId);
 
       var fetchForPeriod = lastUpdate?.LastRecordDateTime ?? DateTime.MinValue;
@@ -46,18 +44,16 @@ namespace NotionCards.Core.Notion
         Sorts = [new() { Direction = Direction.Descending, Timestamp = Timestamp.CreatedTime }]
       };
 
-      var dbSetup = await _appDbContext.NotionDbs.FindAsync(_options.DatabaseId);
+      var dbSetup = await _appDbContext.NotionDbs.FindAsync(requestNotionDbId);
       if (dbSetup is null)
         throw new InvalidOperationException("There is no database setup for that operation.");
 
-      var parsedJson = JsonDocument.Parse(dbSetup.FieldMappings);
-      var frontTextField = parsedJson.RootElement.GetProperty("frontText").GetString();
-      var backTextField = parsedJson.RootElement.GetProperty("backText").GetString();
+      var mappings = JsonSerializer.Deserialize<NotionDbFieldMappings>(dbSetup.FieldMappings);
 
       DateTime lastRecordDateTime;
       do
       {
-        var pages = await client.Databases.QueryAsync(_options.DatabaseId, parameters);
+        var pages = await _client.Databases.QueryAsync(_options.DatabaseId, parameters);
 
         var parsedPages = pages.Results.Select(x =>
         {
@@ -69,7 +65,7 @@ namespace NotionCards.Core.Notion
           return new NotionPage(x.Id, properties.ToFrozenDictionary(y => y.Name, y => y));
         }).ToList();
 
-        var records = MapToCards(parsedPages, frontTextField, backTextField);
+        var records = MapToCards(parsedPages, mappings);
         lastRecordDateTime = records.First().AddedTime;
 
         await _appDbContext.Cards.AddRangeAsync(records);
@@ -92,13 +88,13 @@ namespace NotionCards.Core.Notion
       await _appDbContext.SaveChangesAsync();
     }
 
-    private List<Card> MapToCards(List<NotionPage> fields, string frontTextField, string backTextField)
+    private List<Card> MapToCards(List<NotionPage> fields, NotionDbFieldMappings mappings)
     {
       return fields.Select(x => new Card()
       {
         AddedTime = DateTime.Parse(x.FieldsByName.GetValueOrDefault("Date")!.Value),
-        FrontText = x.FieldsByName.GetValueOrDefault(frontTextField)!.Value,
-        BackText = x.FieldsByName.GetValueOrDefault(backTextField)!.Value
+        FrontText = x.FieldsByName.GetValueOrDefault(mappings.FrontTextField)!.Value,
+        BackText = x.FieldsByName.GetValueOrDefault(mappings.BackTextField)!.Value
       }).ToList();
     }
 

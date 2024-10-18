@@ -37,12 +37,6 @@ app.UseStaticFiles();
 
 app.MapGroup("/sets").MapSetEndpoints().WithTags("Sets");
 app.MapGroup("/cards").MapCardsEndpoints().WithTags("Cards");
-
-app.MapPost("/notion:import", async ([FromServices] NotionClientAdapter client) =>
-{
-  await client.ReadEntireDb();
-});
-
 app.MapFallbackToFile("index.html");
 
 app.Run();
